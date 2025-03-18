@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Shortcode Widget Tools
- * Version: 1.0.0
+ * Version: 1.0.1
  * Description: ウィジェットをショートコード化して使用できます。ウィジェット数は 設定 -> 表示設定 から可能です。[widget_shortcode_0 ws=0] (0の部分は1〜5の数字)で埋め込みできます。
  * Author: DAI
  * Author URI: https://etbs.jp
@@ -65,7 +65,7 @@ if ( ! function_exists( 'etbs_widget_shortcode_activate' ) ){
 // アンインストール処理
 if ( ! function_exists( 'etbs_widget_shortcode_uninstall' ) ){
 	function etbs_widget_shortcode_uninstall() {
-		///delete_option('widget_num_field');
+		delete_option('widget_num_field');
 	}
 }
 
