@@ -127,7 +127,7 @@ if ( ! function_exists( 'etbs_widget_shortcode_render_dashboard_widget' ) ) {
 
 		<strong><?php esc_html_e( '注意事項', 'widget-shortcode-tools' ); ?></strong>
 		<ul style="margin:6px 0 12px 1.2em;list-style:disc;">
-			<li><?php esc_html_e( '「デフォルト数」を減らすと、それを超える番号のウィジェットエリアは表示されなくなります（配置済みウィジェットの設定自体は削除されません）。', 'widget-shortcode-tools' ); ?></li>
+			<li><?php esc_html_e( '「デフォルト数」を減らすと、それを超える番号のウィジェットエリアは表示されなくなり、そこに配置していたウィジェットは「外観 > ウィジェット」を開いた時点で「使用停止中のウィジェット」へ移動します。中身は残りますが、数を戻しても自動では元の位置に戻りません。', 'widget-shortcode-tools' ); ?></li>
 		</ul>
 
 		<strong><?php esc_html_e( 'サポート', 'widget-shortcode-tools' ); ?></strong>

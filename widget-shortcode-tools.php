@@ -6,8 +6,10 @@
  * Author: DAI
  * Author URI: https://etbs.jp
  * Plugin URI: https://etbs.jp/product-category/wordpress-tools/
+ * Requires at least: 6.7
+ * License: GPL-2.0-or-later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: widget-shortcode-tools
- * Domain Path: /languages
  * @package widget-shortcode-tools
  */
 
