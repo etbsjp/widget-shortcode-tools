@@ -203,7 +203,9 @@ if ( ! function_exists( 'etbs_widget_shortcode_admin_footer_text' ) ) {
 			esc_html__( '開発のご依頼', 'widget-shortcode-tools' )
 		);
 
-		return wp_kses_post(
+		// 「設定 → 表示設定」は WordPress コアの画面であり、このプラグインの専用画面ではない。
+		// 元のフッター文言を消さないよう、置き換えずに追記する。
+		$notice = wp_kses_post(
 			sprintf(
 				/* translators: 1: 「開発を支援」リンク, 2: 「開発のご依頼」リンク */
 				__( 'Shortcode Widget Toolsが役に立ったら %1$s、カスタマイズは %2$s からどうぞ。', 'widget-shortcode-tools' ),
@@ -211,6 +213,8 @@ if ( ! function_exists( 'etbs_widget_shortcode_admin_footer_text' ) ) {
 				$request_link
 			)
 		);
+
+		return ( '' === $text ) ? $notice : $text . ' | ' . $notice;
 	}
 	add_filter( 'admin_footer_text', 'etbs_widget_shortcode_admin_footer_text' );
 }
