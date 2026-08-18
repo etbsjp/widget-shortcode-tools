@@ -135,9 +135,16 @@ if ( ! function_exists( 'etbs_widget_shortcode_render_dashboard_widget' ) ) {
 		<?php
 		echo wp_kses_post(
 			sprintf(
-				/* translators: 1: 「開発のご依頼」リンク, 2: 「開発を支援」リンク */
-				__( '有償サポートやカスタマイズは%1$sページから、開発の継続は%2$sで応援いただけます。', 'widget-shortcode-tools' ),
-				$request_link,
+				/* translators: %s: 「開発のご依頼」リンク */
+				__( '有償サポートやカスタマイズは%sからお問い合わせください。', 'widget-shortcode-tools' ),
+				$request_link
+			)
+		);
+		echo ' ';
+		echo wp_kses_post(
+			sprintf(
+				/* translators: %s: 「開発を支援」リンク */
+				__( '開発の継続は%sで応援いただけます。', 'widget-shortcode-tools' ),
 				$donate_link
 			)
 		);
