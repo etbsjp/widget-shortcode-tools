@@ -77,6 +77,13 @@ Widget_Shortcode::init();
 /* サポート導線（ダッシュボードウィジェット）
 /*-------------------------------------------*/
 if ( ! function_exists( 'etbs_widget_shortcode_add_dashboard_widget' ) ) {
+	/**
+	 * ダッシュボードにサポート導線用のウィジェットを追加する。
+	 *
+	 * `manage_options` 権限を持つユーザーにのみ表示する。
+	 *
+	 * @return void
+	 */
 	function etbs_widget_shortcode_add_dashboard_widget() {
 		if ( ! current_user_can( 'manage_options' ) ) { return; }
 		wp_add_dashboard_widget(
@@ -89,27 +96,55 @@ if ( ! function_exists( 'etbs_widget_shortcode_add_dashboard_widget' ) ) {
 }
 
 if ( ! function_exists( 'etbs_widget_shortcode_render_dashboard_widget' ) ) {
+	/**
+	 * ダッシュボードウィジェットの中身（使い方・注意事項・サポート導線）を出力する。
+	 *
+	 * @return void
+	 */
 	function etbs_widget_shortcode_render_dashboard_widget() {
 		$reading_url = admin_url( 'options-reading.php' );
+
+		// サポート導線のリンク（プラグイン一覧の行と同じ文言・URLで統一する）。
+		$donate_link = sprintf(
+			'<a href="%1$s" target="_blank" rel="noopener noreferrer">%2$s</a>',
+			esc_url( 'https://etbs.jp/product/donate/?utm_source=widget-shortcode-tools&utm_medium=plugin' ),
+			esc_html__( '開発を支援', 'widget-shortcode-tools' )
+		);
+		$request_link = sprintf(
+			'<a href="%1$s" target="_blank" rel="noopener noreferrer">%2$s</a>',
+			esc_url( 'https://etbs.jp/product-category/wordpress-tools/?utm_source=widget-shortcode-tools&utm_medium=plugin' ),
+			esc_html__( '開発のご依頼', 'widget-shortcode-tools' )
+		);
 		?>
-		<p>ウィジェットをショートコード化して、投稿本文や固定ページに埋め込めます。</p>
+		<p><?php esc_html_e( 'ウィジェットをショートコード化して、投稿本文や固定ページに埋め込めます。', 'widget-shortcode-tools' ); ?></p>
 
-		<strong>使い方</strong>
+		<strong><?php esc_html_e( '使い方', 'widget-shortcode-tools' ); ?></strong>
+		<ol style="margin:6px 0 12px 1.2em;list-style:decimal;">
+			<li><?php echo wp_kses_post( __( '<strong>設定 &gt; 表示設定</strong>の「デフォルト数」で、ショートコード化するウィジェットの数（1〜5）を指定します。', 'widget-shortcode-tools' ) ); ?></li>
+			<li><?php echo wp_kses_post( __( '数を保存すると、<strong>外観 &gt; ウィジェット</strong>に <code>[widget_shortcode_1 ws=1]</code> 〜 その数までのウィジェットエリアが追加されます。', 'widget-shortcode-tools' ) ); ?></li>
+			<li><?php echo wp_kses_post( __( '各エリアにウィジェットを配置し、対応するショートコード（例：<code>[widget_shortcode_1 ws=1]</code>）を投稿・固定ページ本文に貼り付けると、そのウィジェットが表示されます。', 'widget-shortcode-tools' ) ); ?></li>
+		</ol>
+
+		<strong><?php esc_html_e( '注意事項', 'widget-shortcode-tools' ); ?></strong>
 		<ul style="margin:6px 0 12px 1.2em;list-style:disc;">
-			<li><strong>設定 &gt; 表示設定</strong>の「デフォルト数」で、ショートコード化するウィジェットの数（1〜5）を指定します。</li>
-			<li>数を保存すると、<strong>外観 &gt; ウィジェット</strong>に <code>[widget_shortcode_1 ws=1]</code> 〜 その数までのウィジェットエリアが追加されます。</li>
-			<li>各エリアにウィジェットを配置し、対応するショートコード（例：<code>[widget_shortcode_1 ws=1]</code>）を投稿・固定ページ本文に貼り付けると、そのウィジェットが表示されます。</li>
+			<li><?php esc_html_e( '「デフォルト数」を減らすと、それを超える番号のウィジェットエリアは表示されなくなります（配置済みウィジェットの設定自体は削除されません）。', 'widget-shortcode-tools' ); ?></li>
 		</ul>
 
-		<strong>注意事項</strong>
-		<ul style="margin:6px 0 12px 1.2em;list-style:disc;">
-			<li>「デフォルト数」を減らすと、それを超える番号のウィジェットエリアは表示されなくなります（配置済みウィジェットの設定自体は削除されません）。</li>
-		</ul>
+		<strong><?php esc_html_e( 'サポート', 'widget-shortcode-tools' ); ?></strong>
+		<p style="margin:6px 0 12px;">
+		<?php
+		echo wp_kses_post(
+			sprintf(
+				/* translators: 1: 「開発のご依頼」リンク, 2: 「開発を支援」リンク */
+				__( '有償サポートやカスタマイズは%1$sページから、開発の継続は%2$sで応援いただけます。', 'widget-shortcode-tools' ),
+				$request_link,
+				$donate_link
+			)
+		);
+		?>
+		</p>
 
-		<strong>サポート</strong>
-		<p style="margin:6px 0 12px;">有償サポートやカスタマイズは<a href="https://etbs.jp/product-category/wordpress-tools/?utm_source=widget-shortcode-tools&utm_medium=plugin" target="_blank" rel="noopener noreferrer">こちらのページ</a>からお問い合わせください。開発の継続は<a href="https://etbs.jp/product/donate/?utm_source=widget-shortcode-tools&utm_medium=plugin" target="_blank" rel="noopener noreferrer">ご支援</a>で応援いただけます。</p>
-
-		<a href="<?php echo esc_url( $reading_url ); ?>" class="button button-primary">表示設定を開く</a>
+		<a href="<?php echo esc_url( $reading_url ); ?>" class="button button-primary"><?php esc_html_e( '表示設定を開く', 'widget-shortcode-tools' ); ?></a>
 		<?php
 	}
 }
@@ -118,6 +153,13 @@ if ( ! function_exists( 'etbs_widget_shortcode_render_dashboard_widget' ) ) {
 /* サポート導線（プラグイン一覧の行）
 /*-------------------------------------------*/
 if ( ! function_exists( 'etbs_widget_shortcode_plugin_row_meta' ) ) {
+	/**
+	 * プラグイン一覧の行メタにサポート導線リンクを追加する。
+	 *
+	 * @param string[] $links プラグインの行メタリンク一覧。
+	 * @param string   $file  対象プラグインのファイルパス（`plugin_basename()` 形式）。
+	 * @return string[] このプラグイン行の場合はリンクを追加した配列、それ以外は元の配列。
+	 */
 	function etbs_widget_shortcode_plugin_row_meta( $links, $file ) {
 		if ( plugin_basename( WST_PLUGIN_FILE ) !== $file ) { return $links; }
 		$links[] = '<a href="https://etbs.jp/product/donate/?utm_source=widget-shortcode-tools&utm_medium=plugin" target="_blank" rel="noopener noreferrer">'
@@ -133,10 +175,35 @@ if ( ! function_exists( 'etbs_widget_shortcode_plugin_row_meta' ) ) {
 /* サポート導線（設定 → 表示設定 画面のフッター）
 /*-------------------------------------------*/
 if ( ! function_exists( 'etbs_widget_shortcode_admin_footer_text' ) ) {
+	/**
+	 * 表示設定画面のフッターにサポート導線を表示する。
+	 *
+	 * @param string $text 元のフッターテキスト。
+	 * @return string 表示設定画面の場合はサポート導線を含むテキスト、それ以外は元のテキスト。
+	 */
 	function etbs_widget_shortcode_admin_footer_text( $text ) {
 		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
 		if ( ! $screen || 'options-reading' !== $screen->id ) { return $text; }
-		return 'Shortcode Widget Toolsが役に立ったら <a href="https://etbs.jp/product/donate/?utm_source=widget-shortcode-tools&utm_medium=plugin" target="_blank" rel="noopener noreferrer">開発を支援</a>、カスタマイズは <a href="https://etbs.jp/product-category/wordpress-tools/?utm_source=widget-shortcode-tools&utm_medium=plugin" target="_blank" rel="noopener noreferrer">開発のご依頼</a> からどうぞ。';
+
+		$donate_link = sprintf(
+			'<a href="%1$s" target="_blank" rel="noopener noreferrer">%2$s</a>',
+			esc_url( 'https://etbs.jp/product/donate/?utm_source=widget-shortcode-tools&utm_medium=plugin' ),
+			esc_html__( '開発を支援', 'widget-shortcode-tools' )
+		);
+		$request_link = sprintf(
+			'<a href="%1$s" target="_blank" rel="noopener noreferrer">%2$s</a>',
+			esc_url( 'https://etbs.jp/product-category/wordpress-tools/?utm_source=widget-shortcode-tools&utm_medium=plugin' ),
+			esc_html__( '開発のご依頼', 'widget-shortcode-tools' )
+		);
+
+		return wp_kses_post(
+			sprintf(
+				/* translators: 1: 「開発を支援」リンク, 2: 「開発のご依頼」リンク */
+				__( 'Shortcode Widget Toolsが役に立ったら %1$s、カスタマイズは %2$s からどうぞ。', 'widget-shortcode-tools' ),
+				$donate_link,
+				$request_link
+			)
+		);
 	}
 	add_filter( 'admin_footer_text', 'etbs_widget_shortcode_admin_footer_text' );
 }

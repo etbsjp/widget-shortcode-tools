@@ -11,11 +11,11 @@
  * @package widget-shortcode-tools
  */
 
-define( 'WST_PLUGIN_FILE', __FILE__ );
-
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
+
+define( 'WST_PLUGIN_FILE', __FILE__ );
 
 require_once( dirname( __FILE__ ) . '/inc/func.php' );
 
