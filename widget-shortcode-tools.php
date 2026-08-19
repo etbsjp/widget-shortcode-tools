@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Shortcode Widget Tools
- * Version: 1.0.1
+ * Version: 1.1.0
  * Description: ウィジェットをショートコード化して使用できます。ウィジェット数は 設定 -> 表示設定 から可能です。[widget_shortcode_0 ws=0] (0の部分は1〜5の数字)で埋め込みできます。
  * Author: DAI
  * Author URI: https://etbs.jp
