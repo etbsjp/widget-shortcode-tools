@@ -1,0 +1,34 @@
+# widget-shortcode-tools
+
+etbs が配布する WordPress プラグイン。共通ルールの正本は `~/.claude/etbs-plugin-rules.md`。
+
+## レビュー工程に大（シニアエンジニア）を追加する
+
+このリポジトリでは、安藤（`vk-code-reviewer`）のレビューのあと、**PR を作成する前に**
+大（`etbs-senior-wp`）の監査を必ず通すこと。大は etbs の申し送りと過去に踏んだ罠に照らして
+「リリースできる形になっているか」を見る担当で、安藤の一般的なコード品質レビューとは層が違う。
+
+- `Agent` ツールで `subagent_type: etbs-senior-wp`、`name: etbs-senior-wp`、
+  **`isolation: "worktree"`**、**`run_in_background: false`** で起動する
+  （★ `isolation: "worktree"` を付けないと、起動応答は「成功」と返るのに
+  一度も作業せず待機状態に入ることがある。読み取りのみの監査でも必須）
+- prompt には対象リポジトリ・ブランチ・差分（または PR 番号）を渡す
+- 大には **出力の末尾に `監査結果: PASS` または `監査結果: FAIL` を必ず書くよう指示する**
+  （★ 大の定義ファイルには出力形式の指定が無いため、指示しないと合否を機械判定できない）
+- `監査結果: PASS` を受け取るまで PR を作成しない。`FAIL` なら和田へ差し戻して再監査する
+
+★ 大は vk-agents のメンバー表に登録されていないため、指示が無いと**永久に呼ばれない**。
+
+## 検証環境
+
+Local の `order-memo`（`ordermemo.etbs.lc`）。**シンボリックリンク設置でよい**
+（このプラグインは `dirname( __FILE__, N )` を使っていない）。
+
+CLI 検証では Local の php.ini を `-c` で渡すこと。渡さないと「データベース接続確立エラー」になり、
+**サイトが停止しているように見える**（実際は動いている）。`<runId>` は
+`ls -d ~/Library/Application\ Support/Local/run/*/mysql/mysqld.sock` で特定する。
+
+## 版数
+
+★ 版数ヘッダは**この作業では変更しない**。4本の版数を揃える判断があるため、
+引き上げと `dist` への push は人が最後にまとめて行う。
