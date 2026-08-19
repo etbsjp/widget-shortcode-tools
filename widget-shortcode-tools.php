@@ -1,12 +1,11 @@
 <?php
 /**
  * Plugin Name: Shortcode Widget Tools
- * Version: 1.1.0
- * Description: ウィジェットをショートコード化して使用できます。ウィジェット数は 設定 -> 表示設定 から可能です。[widget_shortcode_0 ws=0] (0の部分は1〜5の数字)で埋め込みできます。
+ * Version: 1.1.1
+ * Description: ウィジェットをショートコード化して、投稿本文や固定ページに埋め込めます。ウィジェット数は「設定 → 表示設定」で 1〜5 の範囲で指定し、[widget_shortcode_1 ws=1] のように埋め込みます（数字は1〜5）。
  * Author: DAI
  * Author URI: https://etbs.jp
  * Plugin URI: https://etbs.jp/product-category/wordpress-tools/
- * Requires at least: 6.7
  * License: GPL-2.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: widget-shortcode-tools

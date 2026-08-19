@@ -9,9 +9,11 @@ etbs が配布する WordPress プラグイン。共通ルールの正本は `~/
 「リリースできる形になっているか」を見る担当で、安藤の一般的なコード品質レビューとは層が違う。
 
 - `Agent` ツールで `subagent_type: etbs-senior-wp`、`name: etbs-senior-wp`、
-  **`isolation: "worktree"`**、**`run_in_background: false`** で起動する
-  （★ `isolation: "worktree"` を付けないと、起動応答は「成功」と返るのに
-  一度も作業せず待機状態に入ることがある。読み取りのみの監査でも必須）
+  **`run_in_background: false`** で起動する
+- **`isolation: "worktree"` は使えるなら付ける**（付けないと起動応答は「成功」と返るのに
+  一度も作業せず待機状態に入ることがある）。ただし ★★ **作業ディレクトリが git リポジトリでないと使えない。**
+  その場合は **isolation なしで起動してよい**（2026-08-19 実績あり）。
+  **見分け方は起動応答の形**——`output_file` 付きの正常形なら動いている
 - prompt には対象リポジトリ・ブランチ・差分（または PR 番号）を渡す
 - 大には **出力の末尾に `監査結果: PASS` または `監査結果: FAIL` を必ず書くよう指示する**
   （★ 大の定義ファイルには出力形式の指定が無いため、指示しないと合否を機械判定できない）
@@ -30,5 +32,32 @@ CLI 検証では Local の php.ini を `-c` で渡すこと。渡さないと「
 
 ## 版数
 
-★ 版数ヘッダは**この作業では変更しない**。4本の版数を揃える判断があるため、
-引き上げと `dist` への push は人が最後にまとめて行う。
+版数は**ヘッダの `Version:` 1箇所のみ**（`wp_enqueue_*` を使っていないためキャッシュバスターは無い）。
+`readme.txt` は無く `readme.md` のみなので、PUC は本体ヘッダを読む
+（`Requires` 系が readme に上書きされる罠は起きない）。
+
+★★ **配布4本（woo-modal-block / woo-checkout-colorbox / woo-hit-orderlist / widget-shortcode-tools）は
+版数を揃える。単独で上げない。**
+
+## 宣言（Requires）の方針
+
+★★ `Requires at least` / `Requires PHP` は**実在する下限があるときだけ書く。無ければ書かない。**
+**他のプラグインと横並びで揃えない。** 本体ヘッダだけでなく **`readme` にも書かない**
+（2026-08-19、readme に `PHP 7.4 以上` と書いてしまい監査で差し戻された。
+ヘッダと食い違うと、次に気付いた人が readme に合わせてヘッダへ足す方向に動く）。
+
+- 過剰宣言は WordPress が **`validate_plugin_requirements()` で有効化そのものを拒否**する
+- ★ **更新が止まる見え方は2つの宣言で違う。**
+  - `Requires at least`：PUC は `requires` を更新トランジェントに入れない
+    （`Puc/v5p5/Plugin/Update.php` に該当プロパティが無い）ため、**更新リンクは出る**。
+    押した後に `Plugin_Upgrader::check_package()` が zip のヘッダを読んで
+    `incompatible_wp_required_version` で止める＝**「押すと失敗する」**
+  - `Requires PHP`：PUC は `requires_php` を**入れる**（同 `:20` / `:87`）ため、
+    `wp_plugin_update_row()` が **更新リンクそのものを出さない**
+- **`Requires at least` は 2026-08-19 に削除した。** 自前コードで最も新しい WP API は
+  `get_current_screen()`（**WP 3.3**）、同梱 PUC を含めても `wp_doing_cron()`（**WP 4.8**）で、
+  6.x 帯に下限が存在しない。6.7 は「他5本と揃える」という理由で 2026-08-18 に足したもので、
+  API に紐づいた宣言ではなかった
+- **`Requires PHP` は意図的に書かない**（2026-08-18 決定・2026-08-19 再確認）。
+  同梱 PUC の `composer.json` は `>=5.6.20`、本体に PHP7 固有の構文も無く、実測で PHP 7.3.5 の
+  `php -l` が通る。7.4 を足すと、7.4 未満で FTP 手動設置された個体に以後の修正が永久に届かなくなる

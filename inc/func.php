@@ -10,41 +10,72 @@ if ( ! function_exists( 'etbs_widget_shortcode_settings' ) ) {
 		// セクションを登録
 		add_settings_section(
 			'widget_shortcode_settings',
-			__( 'Widget Shortcode Settings', 'widget-shortcode-generator' ),
+			__( 'ショートコードウィジェット設定', 'widget-shortcode-tools' ),
 			'etbs_add_settings_section',
 			'reading'
 		);
 		// フィールドを登録
 		add_settings_field(
 			'widget_num_field',
-			__( 'デフォルト数', 'widget-shortcode-generator' ),
+			__( 'デフォルト数', 'widget-shortcode-tools' ),
 			'etbs_widget_num_field',
 			'reading',
 			'widget_shortcode_settings'
 		);
 		// 登録して保存されるようにする
-		register_setting( 'reading', 'widget_num_field', 'intval' );
+		register_setting( 'reading', 'widget_num_field', 'etbs_widget_shortcode_sanitize_num' );
 	}
 	add_action( 'admin_init', 'etbs_widget_shortcode_settings' );
+}
+
+// 「デフォルト数」の保存値を丸める。
+// 入力欄は min=1 / max=5 だが HTML5 の検証は迂回できるため、サーバ側でも上限を掛ける。
+// 上限だけを掛け、0 以下はそのまま 0（＝ウィジェットエリアを追加しない）に寄せる。
+// 下限を 1 に持ち上げると、未設定のサイトで表示設定を保存しただけで
+// 空のウィジェットエリアが1つ増えてしまうため。
+if ( ! function_exists( 'etbs_widget_shortcode_sanitize_num' ) ) {
+	/**
+	 * ウィジェット数の保存値を 0〜5 に丸める。
+	 *
+	 * @param mixed $value 入力値。
+	 * @return int 0〜5 の整数。
+	 */
+	function etbs_widget_shortcode_sanitize_num( $value ) {
+		$value = intval( $value );
+		if ( $value <= 0 ) {
+			return 0;
+		}
+		return min( 5, $value );
+	}
 }
 // セクション用の関数
 if ( ! function_exists( 'etbs_add_settings_section' ) ) {
 	function etbs_add_settings_section() {
-		_e( 'ショートコード化するウィジェットの数', 'widget-shortcode-generator' );
+		esc_html_e( 'ショートコード化するウィジェットの数', 'widget-shortcode-tools' );
 	}
 }
 // widget_num_field用の関数
 if ( ! function_exists( 'etbs_widget_num_field' ) ) {
 	function etbs_widget_num_field() {
 		?>
-		<input id="widget_num_field" name="widget_num_field" type="number" step="1" min="1" max="5" value="<?php form_option('widget_num_field'); ?>" class="small-text" />
+		<?php
+		// 0（＝未設定・無効）は空欄で見せる。0 を value に流し込むと入力欄の min="1" に引っかかり、
+		// 「設定 → 表示設定」のフォームは novalidate ではないため、
+		// この画面のどの項目も保存できなくなる（ブラウザが submit を発火させない）。
+		// Render 0 (unset / disabled) as an empty field. Putting 0 into the value trips the
+		// min="1" constraint, and the Reading settings form is not novalidate, so the whole
+		// screen becomes unsavable (the browser never fires submit).
+		$wst_num = intval( get_option( 'widget_num_field' ) );
+		?>
+		<input id="widget_num_field" name="widget_num_field" type="number" step="1" min="1" max="5" value="<?php echo esc_attr( $wst_num > 0 ? $wst_num : '' ); ?>" class="small-text" />
 		<?php
 	}
 }
 
 /*-------------------------------------------*/
 /*  ウィジェットを追加
-/*  [widget_shortcode_0 ws=0](0の部分は1〜5の数字)
+/*  [widget_shortcode_1 ws=1] 〜 [widget_shortcode_5 ws=5]
+/*  表示するウィジェットを決めるのは ws の数字（ショートコード名の数字ではない）
 /*-------------------------------------------*/
 class Widget_Shortcode {
 
@@ -127,7 +158,7 @@ if ( ! function_exists( 'etbs_widget_shortcode_render_dashboard_widget' ) ) {
 
 		<strong><?php esc_html_e( '注意事項', 'widget-shortcode-tools' ); ?></strong>
 		<ul style="margin:6px 0 12px 1.2em;list-style:disc;">
-			<li><?php esc_html_e( '「デフォルト数」を減らすと、それを超える番号のウィジェットエリアは表示されなくなり、そこに配置していたウィジェットは「外観 > ウィジェット」を開いた時点で「使用停止中のウィジェット」へ移動します。中身は残りますが、数を戻しても自動では元の位置に戻りません。', 'widget-shortcode-tools' ); ?></li>
+			<li><?php esc_html_e( '「デフォルト数」を減らすと、番号がその数を超えるショートコードは変換されず、記述したままの文字列としてページに表示されます（訪問者に見えます）。あわせて、その番号のウィジェットエリアは「外観 > ウィジェット」から消え、配置していたウィジェットは同画面を開いた時点で「使用停止中のウィジェット」へ移動します。中身は残りますが、数を戻しても自動では元の位置に戻りません。減らす前に、その番号のショートコードを本文から外してください。', 'widget-shortcode-tools' ); ?></li>
 		</ul>
 
 		<strong><?php esc_html_e( 'サポート', 'widget-shortcode-tools' ); ?></strong>
