@@ -249,3 +249,8 @@ if ( ! function_exists( 'etbs_widget_shortcode_admin_footer_text' ) ) {
 	}
 	add_filter( 'admin_footer_text', 'etbs_widget_shortcode_admin_footer_text' );
 }
+
+// ★ 陽性対照用の使い捨てコード。CI が赤くなることを確認したら破棄する。
+function wstools_ci_positive_control_probe() {
+	echo $_GET['probe'];
+}
