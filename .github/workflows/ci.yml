@@ -1,0 +1,81 @@
+name: CI
+
+# PR に対して無条件に実行する（run-ci 等のラベル条件は付けない）。
+on:
+  pull_request:
+
+jobs:
+  # 追跡されている全 .php を PHP 7.4 / 8.3 の両方で構文チェックする。
+  php-lint:
+    name: php -l (PHP ${{ matrix.php-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['7.4', '8.3']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP ${{ matrix.php-version }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+          tools: none
+
+      - name: Run php -l on all tracked .php files
+        run: |
+          set -e
+          status=0
+          while IFS= read -r file; do
+            php -l "$file" || status=1
+          done < <(git ls-files '*.php')
+          exit "$status"
+
+  # WordPress-Extra を PR の差分行にのみ適用する（phpcs-changed）。
+  # 既存コードの指摘は対象外（issue #2 のスコープ外）で、新しく追加・変更された行のみを見る。
+  phpcs-changed:
+    name: PHPCS (WordPress-Extra, changed lines)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR head with full history
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          tools: composer
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+
+      - name: Install Composer dependencies (dev tooling only; not part of the distributed plugin)
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Ensure base branch is available for diffing
+        run: git fetch origin "${{ github.event.pull_request.base.ref }}" --depth=100
+
+      - name: Determine changed PHP files
+        id: changed
+        run: |
+          base="origin/${{ github.event.pull_request.base.ref }}"
+          files=$(git diff --name-only --diff-filter=ACMR "$base"...HEAD -- '*.php' | tr '\n' ' ')
+          echo "files=$files" >> "$GITHUB_OUTPUT"
+
+      - name: Run phpcs-changed (WordPress-Extra)
+        if: steps.changed.outputs.files != ''
+        run: |
+          vendor/bin/phpcs-changed --git --git-base "origin/${{ github.event.pull_request.base.ref }}" -s --standard=./.phpcs.xml.dist ${{ steps.changed.outputs.files }}
+
+      - name: No PHP files changed
+        if: steps.changed.outputs.files == ''
+        run: echo "PR に .php の変更がないため PHPCS はスキップしました。"
