@@ -65,6 +65,43 @@ CLI 検証では Local の php.ini を `-c` で渡すこと。渡さないと「
 ★★ **配布4本（woo-modal-block / woo-checkout-colorbox / woo-hit-orderlist / widget-shortcode-tools）は
 版数を揃える。単独で上げない。**
 
+## CI（2026-08-27 導入・task-queue #153 / issue #2）
+
+PR ごとに GitHub Actions で2つ走る。定義は `.github/workflows/ci.yml`。
+
+| ジョブ | 中身 |
+|---|---|
+| `php -l (PHP 7.4)` / `(PHP 8.3)` | 追跡している全 `.php` の構文チェック |
+| `PHPCS (WordPress-Extra, changed lines)` | WPCS を **PR の差分行だけ**に適用（`sirbrillig/phpcs-changed`） |
+
+### 決定済み（変えないこと）
+
+- ★★ **既存コードの指摘は直さない。** 2026-08-27 実測で `WordPress-Extra` に対し **20 ERROR / 2 WARNING** ある。
+  `dist` は PUC の配信先なので、整形のための版数上げ＝配信を起こしたくない。
+  だから `phpcs-changed` で**変更行のみ**を必須にしている
+- ★★★ **`phpcbf` を走らせないこと。** 一度走ると自動修正が入り、上の前提が丸ごと壊れる
+- **検査ツールは同梱しない。** `composer install` で入る（`composer.json` は `require-dev` のみ）。
+  生成物 `vendor/` は `.gitignore` 済み・配布物からは `export-ignore` 済み
+- **standard は `WordPress-Extra`。** `WordPress-Core` は未エスケープ出力（XSS）も nonce 未検証も
+  **検出しない**（陽性対照で実測）。フル `WordPress` との差は docblock の書式だけなので採らない
+- **起動条件は `pull_request` の無条件実行。** `run-ci` ラベル条件にしない。
+  vk-agents の `ci.md` はエージェントが CI を起動しない運用だが、
+  「リポジトリ側の設定で自動実行される場合」は例外。ラベル運用だと自動フローの PR で CI が一度も走らない
+- `inc/plugin-update-checker/` は第三者コードなので `.phpcs.xml.dist` で検査対象から除外
+
+### ★ CI に触るときの検証
+
+**「Error 0 で緑」を成果にしないこと。** `.php` を変更しない PR では PHPCS は対象0件で自明に緑になる。
+検査が動いていることは**陽性対照**でしか言えない ― 使い捨てブランチに `echo $_GET['probe'];` を1行足し、
+`PHPCS` が赤くなり指摘がその行を指すことを確認する。
+
+### ★ 現状の穴（未対応・展開前に判断）
+
+- `on: pull_request` のみで `push:` が無い。`dist` の branch protection も未設定（Classic・Rulesets とも）なので、
+  **版数上げの直 push は無検査**のまま利用者へ配信される
+- CI の下限は PHP 7.4。一方この節の下の「宣言（Requires）の方針」は **7.3.5 で通ること**を
+  無宣言の根拠にしている。7.3 は CI で検査していない
+
 ## 宣言（Requires）の方針
 
 ★★ `Requires at least` / `Requires PHP` は**実在する下限があるときだけ書く。無ければ書かない。**
