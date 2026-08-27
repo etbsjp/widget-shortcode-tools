@@ -4,6 +4,15 @@ name: CI
 on:
   pull_request:
 
+# 既定を最小権限にする。検査しかしないので読み取りだけで足りる。
+permissions:
+  contents: read
+
+# 同じ PR に続けて push されたら古い実行を打ち切る。
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   # 追跡されている全 .php を PHP 7.4 / 8.3 の両方で構文チェックする。
   php-lint:
@@ -26,7 +35,7 @@ jobs:
 
       - name: Run php -l on all tracked .php files
         run: |
-          set -e
+          set -euo pipefail
           status=0
           while IFS= read -r file; do
             php -l "$file" || status=1
@@ -61,21 +70,40 @@ jobs:
       - name: Install Composer dependencies (dev tooling only; not part of the distributed plugin)
         run: composer install --no-interaction --no-progress --prefer-dist
 
+      # ★ PR 由来の値（ブランチ名・ファイル名）は env 経由でのみ渡す。
+      #   run: に ${{ }} で直接展開すると、PR 側が名前にシェルのメタ文字を仕込めるため
+      #   runner 上で任意のコマンドが走る（public repo なので誰でも PR を出せる）。
       - name: Ensure base branch is available for diffing
-        run: git fetch origin "${{ github.event.pull_request.base.ref }}" --depth=100
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: git fetch --no-tags origin "$BASE_REF"
 
       - name: Determine changed PHP files
         id: changed
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
-          base="origin/${{ github.event.pull_request.base.ref }}"
-          files=$(git diff --name-only --diff-filter=ACMR "$base"...HEAD -- '*.php' | tr '\n' ' ')
-          echo "files=$files" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          git diff --name-only --diff-filter=ACMR "origin/$BASE_REF...HEAD" -- '*.php' > changed-php.txt
+          if [ -s changed-php.txt ]; then
+            echo "has_files=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_files=0" >> "$GITHUB_OUTPUT"
+          fi
+          echo "--- changed .php ---"
+          cat changed-php.txt
 
       - name: Run phpcs-changed (WordPress-Extra)
-        if: steps.changed.outputs.files != ''
+        if: steps.changed.outputs.has_files == '1'
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
-          vendor/bin/phpcs-changed --git --git-base "origin/${{ github.event.pull_request.base.ref }}" -s --standard=./.phpcs.xml.dist ${{ steps.changed.outputs.files }}
+          set -euo pipefail
+          # ファイル名は引数配列として渡す。文字列展開しない。
+          mapfile -t files < changed-php.txt
+          vendor/bin/phpcs-changed --git --git-base "origin/$BASE_REF" -s \
+            --standard=./.phpcs.xml.dist "${files[@]}"
 
       - name: No PHP files changed
-        if: steps.changed.outputs.files == ''
+        if: steps.changed.outputs.has_files == '0'
         run: echo "PR に .php の変更がないため PHPCS はスキップしました。"
