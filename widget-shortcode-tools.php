@@ -3,7 +3,7 @@
  * Plugin Name: Shortcode Widget Tools
  * Version: 1.1.1
  * Description: ウィジェットをショートコード化して、投稿本文や固定ページに埋め込めます。ウィジェット数は「設定 → 表示設定」で 1〜5 の範囲で指定し、[widget_shortcode_1 ws=1] のように埋め込みます（数字は1〜5）。
- * Author: DAI
+ * Author: ETBS (DAI)
  * Author URI: https://etbs.jp
  * Plugin URI: https://etbs.jp/product-category/wordpress-tools/
  * License: GPL-2.0-or-later
