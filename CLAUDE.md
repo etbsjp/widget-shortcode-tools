@@ -65,74 +65,25 @@ CLI 検証では Local の php.ini を `-c` で渡すこと。渡さないと「
 ★★ **配布4本（woo-modal-block / woo-checkout-colorbox / woo-hit-orderlist / widget-shortcode-tools）は
 版数を揃える。単独で上げない。**
 
-## CI（2026-08-27 導入・task-queue #153 / issue #2）
+## CI（2026-08-27 導入）
 
-PR ごとに GitHub Actions で2つ走る。定義は `.github/workflows/ci.yml`。
+**共通ルールは `~/.claude/etbs-plugin-rules.md` の 2.7 節**（standard の選定理由・`phpcbf` を走らせない理由・
+third-party action をタグ固定にしている判断・陽性対照・配布物の検証手順など）。
+**そちらの内容はここに転記しない**（二重管理になり、必ず片方が古びる）。
+ここに置くのは **このリポジトリでしか決まらない値**だけ。
 
-| ジョブ | 中身 |
-|---|---|
-| `php -l (PHP 7.4)` / `(PHP 8.3)` | 追跡している全 `.php` の構文チェック |
-| `PHPCS (WordPress-Extra, changed lines)` | WPCS を **PR の差分行だけ**に適用（`sirbrillig/phpcs-changed`） |
-
-### 決定済み（変えないこと）
-
-- ★★ **既存コードの指摘は直さない。** 2026-08-27 実測で `WordPress-Extra` に対し **20 ERROR / 2 WARNING** ある。
-  `dist` は PUC の配信先なので、整形のための版数上げ＝配信を起こしたくない。
-  だから `phpcs-changed` で**変更行のみ**を必須にしている
-- ★★★ **`phpcbf` を走らせないこと。** 一度走ると自動修正が入り、上の前提が丸ごと壊れる
-- **検査ツールは同梱しない。** `composer install` で入る（`composer.json` は `require-dev` のみ）。
-  生成物 `vendor/` は `.gitignore` 済み・配布物からは `export-ignore` 済み
-- **standard は `WordPress-Extra`。** `WordPress-Core` は未エスケープ出力（XSS）も nonce 未検証も
-  **検出しない**（陽性対照で実測）。フル `WordPress` との差は docblock の書式だけなので採らない
-- **起動条件は `pull_request` の無条件実行。** `run-ci` ラベル条件にしない。
-  vk-agents の `ci.md` はエージェントが CI を起動しない運用だが、
-  「リポジトリ側の設定で自動実行される場合」は例外。ラベル運用だと自動フローの PR で CI が一度も走らない
-- `inc/plugin-update-checker/` は第三者コードなので `.phpcs.xml.dist` で検査対象から除外
-
-### ★ CI に触るときの検証
-
-**「Error 0 で緑」を成果にしないこと。** `.php` を変更しない PR では PHPCS は対象0件で自明に緑になる。
-検査が動いていることは**陽性対照**でしか言えない ― 使い捨てブランチに `echo $_GET['probe'];` を1行足し、
-`PHPCS` が赤くなり指摘がその行を指すことを確認する。
-
-### dist への直 push も検査する（2026-08-27 追加）
-
-`on:` は `pull_request` と **`push: branches: [dist]`** の2つ。`dist` は PUC の配信元で、版数上げは
-人が直接 push する運用なので、PR を通らない変更がそのまま利用者へ配られる経路が残っていた。
-
-★ **これは鍵ではなく火災報知器。** CI は push の**後**に走るので、壊れたコードは一度 `dist` に載る。
-配信そのものを止めたいなら branch protection の必須チェック化が要るが、
-その場合は**版数上げの直 push も塞がる**（2026-08-27 時点で Classic・Rulesets とも未設定）。
-
-★ push では `phpcs-changed` は走らない（比較の基準になるブランチが無いため）。走るのは `php -l` の2つだけ。
-
-### ★★★ CI が守るのは PHP 7.4 まで。7.3 は守られていない
-
-**下の「宣言（Requires）の方針」は `Requires PHP` を無宣言にしており、その根拠は
-「PHP 7.3.5 で `php -l` が通る」という 2026-08-25 の実測1本だけ。CI の matrix は `['7.4','8.3']` なので、
-この根拠は自動では守られていない。**
-
-2026-08-27 に方針として確認した内容（CI に 7.3 を足さない代わりに、ここへ明記する）:
-
-- **実質の下限は 7.4。7.3 の通過は都度実測する。**
-- ★ 次の構文を書くと **PHP 7.3 の個体は白画面**になる。しかも `Requires PHP` が無いので
-  **WordPress は警告を出さずに更新を配る**（更新リンクを止める `requires_php` が無いため）:
-  アロー関数 `fn() =>` / 型付きプロパティ / `??=` / `match` / ヌル安全演算子 `?->`
-- ★★ **PHPCompatibility では代用できない。** 2026-08-27 に実測したところ、安定版 9.3.5（2019年）は
-  **アロー関数・`match`・`?->` を検出しない**（型付きプロパティと `??=` は検出する）。
-  「PHPCompatibility が緑」は「7.3 で動く」の証明にならない
-- ★ 関数の可用性はほぼ問題にならない。`str_contains()` など主要なものは **WordPress コアがポリフィル**を持つ
-  （PHPCompatibilityWP が意図的に無視するのはこのため）
-
-→ **7.3 で動くことを保証したい変更を書いたら、その場で PHP 7.3 の `php -l` を通すこと。**
-それをやらないなら、`Requires PHP` を書かない判断のほうを見直すべき。
-
-### ★ 現状の穴（未対応・展開前に判断）
-
-- **third-party action がタグ固定**（`shivammathur/setup-php@v2` / `actions/cache@v4`）。
-  2026-08-27 に「固定しない」と判断した。理由は、公開 repo・secrets 未使用・`contents: read` のみ・
-  成果物を生成しないため被害の経路が無く、SHA 固定は更新が手作業になって古い action が残るほうの害が大きいこと。
-  ★ **このワークフローが secrets を持つか、配布物を生成するようになったら見直す**
+- 定義は `.github/workflows/ci.yml`。PR ごとに `php -l`（PHP 7.4 / 8.3）と
+  `PHPCS (WordPress-Extra, changed lines)` が走る。`dist` への直 push では `php -l` の2つだけ走る
+- **既存指摘の基準値: 20 ERROR / 2 WARNING**（2026-08-28 実測・`WordPress-Extra`）。
+  ★ 測り直すときは `vendor/bin/phpcs --standard=./.phpcs.xml.dist --report=summary $(git ls-files '*.php')`
+  の形でのみ行う。素の phpcs は `.gitignore` を尊重しない
+- ★ **この repo が `ci.yml` の原本。** 他6本はここからコピーする。
+  **ここを直したら6本へ再展開すること**（byte 一致に戻す）。★ 参照 SHA は書かない ―
+  更新のたびに古びる（実際 2026-08-28 に `dist 3857ad4` という記述が全5本で古くなった）
+- **`Requires PHP` は無宣言。** CI の matrix は `['7.4','8.3']` なので、
+  **実質の下限は 7.4。7.3 は CI では守られていない**（下の「宣言（Requires）の方針」を参照）。
+  ★ 7.3 で動くことを保証したい変更を書いたら、その場で PHP 7.3 の `php -l` を通すこと
+- `composer.json` の `name` は `etbsjp/widget-shortcode-tools`（原本そのもの）
 
 ## 宣言（Requires）の方針
 
