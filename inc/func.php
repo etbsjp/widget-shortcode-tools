@@ -119,7 +119,7 @@ if ( ! function_exists( 'etbs_widget_shortcode_add_dashboard_widget' ) ) {
 		if ( ! current_user_can( 'manage_options' ) ) { return; }
 		wp_add_dashboard_widget(
 			'etbs_widget_shortcode_dashboard_widget',
-			'Shortcode Widget Tools',
+			'ETBS Shortcode Widget Tools',
 			'etbs_widget_shortcode_render_dashboard_widget'
 		);
 	}
